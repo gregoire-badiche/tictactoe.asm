@@ -1,19 +1,16 @@
+%ifndef __TICTACTOE_ASM__
+%define __TICTACTOE_ASM__
+
+%include "src/grid.asm"
+
 section .data
-extern characters
-extern grid
-extern grid_len
 
 section .text
 global _start
-extern get_case
-extern set_case
-extern display_grid
 
 _start:
-    mov rdi, 1
-    mov rsi, 1
-    mov rdx, 1
-    call set_case
+    mov rax, 2
+    set_case 1, 1, rax
     call display_grid
 .exit:
     xor rax, rax ; Set rax to 0
@@ -22,4 +19,5 @@ _start:
     syscall
 
 section .bss
-extern cases
+
+%endif

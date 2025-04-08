@@ -1,7 +1,7 @@
+%ifndef __GRID_ASM__
+%define __GRID_ASM__
+
 section .data
-global characters
-global grid
-global grid_len
 
 characters:
     db 0x20 ; space
@@ -17,45 +17,54 @@ grid:
 grid_len equ $ - grid
 
 section .text
-global set_case
-global get_case
-global display_grid
 
-set_case:
-    imul si, si, 3
-    add dil, sil
-    mov [cases + rdi], dl
-    ret
+%macro set_case 3
+    push rcx
+    mov rcx, %2
+    imul rcx, rcx, 3
+    add rcx, %1
+    mov [cases + rcx], byte %3
+    pop rcx
+%endmacro
 
-get_case:
+%macro get_case 3
+    push rcx
     xor rax, rax
-    imul si, si, 3
-    add dil, sil
-    mov rax, [cases + rdi]
-    ret
+    mov rcx, %3
+    imul rcx, rcx, 3
+    add rcx, %2
+    mov %1, [cases + rcx]
+    pop rcx
+%endmacro
 
 display_grid:
+    push rax
+    push rcx
+    push rdx
+    push rsi
+    xor rax, rax
     mov rcx, 2 ; loop counter
-.set_cases: ; loop + unwinding, setting the grid
     xor rdx, rdx
-    mov r9, rcx
-    mov dl, [cases + r9]
+    xor rsi, rsi
+.set_cases: ; loop + unwinding, setting the grid
+    mov rsi, rcx
+    mov dl, [cases + rsi]
     mov dl, [characters + rdx]
-    imul r8, rcx, 4
-    inc r8
-    mov [grid + r8], dl
+    imul rax, rcx, 4
+    inc rax
+    mov [grid + rax], dl
 
-    add r9, 3
-    mov dl, [cases + r9]
+    add rsi, 3
+    mov dl, [cases + rsi]
     mov dl, [characters + rdx]
-    add r8, 24
-    mov [grid + r8], dl
+    add rax, 24
+    mov [grid + rax], dl
 
-    add r9, 3
-    mov dl, [cases  + r9]
+    add rsi, 3
+    mov dl, [cases  + rsi]
     mov dl, [characters + rdx]
-    add r8, 24
-    mov [grid + r8], dl
+    add rax, 24
+    mov [grid + rax], dl
     dec rcx
     jns .set_cases ; jump back (loop)
 
@@ -65,10 +74,15 @@ display_grid:
     mov rsi, grid ; message
     mov rdx, grid_len ; len
     syscall
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rax
     ret
 
 section .bss
 ; array of vals
-global cases
 cases:
     resb 9
+
+%endif
