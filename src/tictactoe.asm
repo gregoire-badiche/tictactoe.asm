@@ -8,9 +8,8 @@ section .data
 section .text
 global _start
 
-_start:
-    mov rax, 2
-    set_case 1, 1, rax
+_start: ;
+    set_case 1, 1, byte 2
     call display_grid
 .exit:
     xor rax, rax ; Set rax to 0
