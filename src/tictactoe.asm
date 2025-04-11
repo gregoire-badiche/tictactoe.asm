@@ -9,7 +9,13 @@ section .text
 global _start
 
 _start: ;
-    set_case 1, 1, byte 2
+    call get_input
+.end_input:
+    pop rcx
+    pop rcx
+    cmp al, 0
+    je _start
+    set_case rbx, rcx, byte 1
     call display_grid
 .exit:
     xor rax, rax ; Set rax to 0
