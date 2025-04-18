@@ -2,6 +2,7 @@
 %define __TICTACTOE_ASM__
 
 %include "src/grid.asm"
+%include "src/io.asm"
 
 section .data
 
@@ -9,14 +10,13 @@ section .text
 global _start
 
 _start: ;
-    call get_input
-.end_input:
-    pop rcx
-    pop rcx
-    cmp al, 0
-    je _start
-    set_case rbx, rcx, byte 1
     call display_grid
+    call get_input ; rax, rbx now contains the coordinates
+    mov dl, [current_player]
+    inc dl
+    set_case rax, rbx, dl
+    call display_grid
+    ; jmp _start
 .exit:
     xor rax, rax ; Set rax to 0
     mov al, 60 ; set rax to 60 (exit syscall)
@@ -24,5 +24,6 @@ _start: ;
     syscall
 
 section .bss
+.player_selection resb 2
 
 %endif

@@ -27,35 +27,42 @@ section .text
 
 get_input: ; pushes y, x in the stack, returns error with rax
     write input_text, input_text_len
-    read .player_selection, 2
-    xor rbx, rbx
-    xor rcx, rcx
-    mov bl, [.player_selection]
-    mov cl, [.player_selection + 1]
-    cmp bl, byte 97 ; a = 97, c = 99, 1 = 49, 3 = 51
-    jl .err
-    cmp bl, byte 99
-    jg .err
-    cmp cl, byte 49
-    jl .err
-    cmp cl, byte 51
-    jg .err
-    sub bl, 97
-    sub cl, 49
-    pop rdx
-    push rcx
-    push rbx
-    mov rax, 1 ; success !!
-    jmp rdx
-.err:
-    pop rdx
     xor rax, rax
-    push rax ; dummy values
-    push rax
-    jmp rdx
+    xor rdi, rdi
+    mov rsi, .player_selection
+    mov rdx, 2
+    syscall
+.flush:
+    xor rax, rax
+    mov rsi, character
+    mov rdx, 1
+    syscall
+    cmp byte al, 0 ; check for EOF
+    je .end_flush
+    cmp byte [character], 10 ; check for new line
+    jne .flush
+.end_flush:
+    xor rax, rax
+    xor rbx, rbx
+    mov al, [.player_selection]
+    mov bl, [.player_selection + 1]
+    cmp al, byte 97 ; a = 97, c = 99, 1 = 49, 3 = 51
+    jl .err
+    cmp al, byte 99
+    jg .err
+    cmp bl, byte 49
+    jl .err
+    cmp bl, byte 51
+    jg .err
+    sub al, 97
+    sub bl, 49
+    ret ; success !!
+.err:
+    jmp get_input
 
 section .bss
 
 .player_selection resb 2
+character resb 1
 
 %endif

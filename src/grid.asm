@@ -12,12 +12,12 @@ characters:
 current_player db 0
 
 grid:
-    db "   1   2   3 ", 0x0A ; len 14
-    db "a    |   |   ", 0x0A
+    db "   a   b   c ", 0x0A ; len 14
+    db "1    |   |   ", 0x0A
     db "  ---+---+---", 0x0A
-    db "b    |   |   ", 0x0A
+    db "2    |   |   ", 0x0A
     db "  ---+---+---", 0x0A
-    db "c    |   |   ", 0x0A
+    db "3    |   |   ", 0x0A
 grid_len equ $ - grid
 
 section .text
