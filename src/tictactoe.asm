@@ -139,55 +139,8 @@ check_case_valid: ; using rax, rbx, rcx, rdx
     mov [current_player + rax], dl
 
     ; Check for a win
-check_win: ; using rax, rbx, rcx
-    ; columns
-    xor rax, rax
-    xor rbx, rbx
-    xor rcx, rcx
-    mov cl, [current_player]
-.loop:
-    ; check rows
-    mov bl, al
-    cmp cl, [cases + rbx]
-    jne .l2
-    inc bl
-    cmp cl, [cases + rbx]
-    jne .l2
-    inc bl
-    cmp cl, [cases + rbx]
-    je win
-    ; won !!
-.l2:
-    ; check columns
-    mov bl, al
-    cmp cl, [cases + rbx]
-    jne .l3
-    add bl, 3
-    cmp cl, [cases + rbx]
-    jne .l3
-    add bl, 3
-    cmp cl, [cases + rbx]
-    je win
-.l3:
-    ; increments counter
-    inc al
-    cmp al, 3
-    jne .loop
-
-    ; diagonal
-    cmp cl, [cases]
-    jne .l4
-    cmp cl, [cases + 4]
-    jne .l4
-    cmp cl, [cases + 8]
-    je win
-.l4:
-    ; antidiagonal
-    cmp cl, [cases + 3]
-    jne end_turn
-    cmp cl, [cases + 5]
-    jne end_turn
-    cmp cl, [cases + 7]
+    call check_win
+    cmp rax, 1
     je win
 end_turn:
     ; switch_players and increments turn counter
@@ -203,6 +156,10 @@ end_turn:
     mov [current_player], al
     jmp _start
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; useful jumps
+
 input_not_valid:
     write input_not_valid_text, input_not_valid_text_len
     jmp get_input
@@ -211,7 +168,7 @@ case_already_taken:
     jmp get_input
 
 win: ; player win in cl, or assume current player won
-    mov rbx, rcx
+    mov bl, [current_player]
     write grid, grid_len
     mov bl, [characters + rbx]
     mov [win_text + 12], bl
@@ -228,6 +185,65 @@ exit:
     mov rax, 60 ; set rax to 60 (exit syscall)
     xor rdi, rdi ; set rdi to 0 (exit code 0)
     syscall
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; functions
+
+check_win: ; using rax, rbx, rcx, returns in rax, trashes rbx and rcx
+    ; columns
+    xor rax, rax
+    xor rbx, rbx
+    xor rcx, rcx
+    mov cl, [current_player]
+.l1:
+    ; check rows
+    mov bl, al
+    cmp cl, [cases + rbx]
+    jne .l2
+    inc bl
+    cmp cl, [cases + rbx]
+    jne .l2
+    inc bl
+    cmp cl, [cases + rbx]
+    je .win
+    ; won !!
+.l2:
+    ; check columns
+    mov bl, al
+    cmp cl, [cases + rbx]
+    jne .l3
+    add bl, 3
+    cmp cl, [cases + rbx]
+    jne .l3
+    add bl, 3
+    cmp cl, [cases + rbx]
+    je .win
+.l3:
+    ; increments counter
+    inc al
+    cmp al, 3
+    jne .l1
+    ; diagonal
+    cmp cl, [cases]
+    jne .l4
+    cmp cl, [cases + 4]
+    jne .l4
+    cmp cl, [cases + 8]
+    je .win
+.l4:
+    ; antidiagonal
+    cmp cl, [cases + 3]
+    jne .no_win
+    cmp cl, [cases + 5]
+    jne .no_win
+    cmp cl, [cases + 7]
+    jne .no_win
+.win:
+    mov rax, 1
+    ret
+.no_win
+    mov rax, 0
+    ret
 
 section .bss
 player_selection resb 2
