@@ -211,9 +211,10 @@ case_already_taken:
     jmp get_input
 
 win: ; player win in cl, or assume current player won
+    mov rbx, rcx
     write grid, grid_len
-    mov cl, [characters + rcx]
-    mov [win_text + 12], cl
+    mov bl, [characters + rbx]
+    mov [win_text + 12], bl
     write win_text, win_text_len
     jmp exit
 
