@@ -133,10 +133,37 @@ check_case_valid: ; using rax, rbx, rcx, rdx
     inc rax
     imul rax, rax, 4
     imul rbx, rbx, 28
-    add rbx, 14
+    add rbx, 13
     add rax, rbx
     mov dl, [characters + rdx]
-    mov [current_player + rax], dl
+    mov [grid + rax], dl
+
+    mov byte [current_player], 2
+    call minimax_max
+    mov byte [cases + rbx], 2
+
+    mov rax, rbx
+    xor rbx, rbx
+.modulo:
+    cmp rax, 3
+    jl .end_modulo
+    inc rbx
+    sub rax, 3
+    jmp .modulo
+.end_modulo:
+    ; Sets the case in the displayed string
+    mov rdx, 2
+    inc rax
+    imul rax, rax, 4
+    imul rbx, rbx, 28
+    add rbx, 13
+    add rax, rbx
+    mov dl, [characters + rdx]
+    mov [grid + rax], dl
+
+    mov al, [n_turns]
+    inc al
+    mov [n_turns], al
 
     ; Check for a win
     call check_win
@@ -186,7 +213,7 @@ exit:
     xor rdi, rdi ; set rdi to 0 (exit code 0)
     syscall
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; functions
 
 check_win: ; using rax, rbx, rcx, returns in rax, trashes rbx and rcx
@@ -232,17 +259,161 @@ check_win: ; using rax, rbx, rcx, returns in rax, trashes rbx and rcx
     je .win
 .l4:
     ; antidiagonal
-    cmp cl, [cases + 3]
+    cmp cl, [cases + 2]
     jne .no_win
-    cmp cl, [cases + 5]
+    cmp cl, [cases + 4]
     jne .no_win
-    cmp cl, [cases + 7]
+    cmp cl, [cases + 6]
     jne .no_win
 .win:
     mov rax, 1
     ret
-.no_win
+.no_win:
     mov rax, 0
+    ret
+
+; stack :
+; current_player, best_score, best_pos, loop_counter
+minimax_max:
+    call check_win
+    cmp rax, 1
+    je .immediate_return
+    cmp byte [n_turns], 9
+    je .return_zero
+
+    ; for each possible case, 
+    xor rdx, rdx
+    xor rbx, rbx
+
+    ; increases turn by 1
+    mov bl, [current_player]
+    push rbx ; save current_player
+    mov bl, [n_turns]
+    push rbx ; save n_turns
+    inc bl
+    mov [n_turns], bl
+    and bl, 0x01
+    inc bl
+    mov [current_player], bl
+    push -11 ; save best_score
+    push -11 ; save best_pos
+.loop:
+    cmp byte [cases + rdx], 0
+    jne .loop_end
+    
+    ; fake placing
+    mov [cases + rdx], bl
+    push rdx ; save loop_counter
+    call minimax_min
+    pop rdx ; retrieve loop_counter
+    
+    pop rbx ; retrieve best_pos
+    pop rcx ; retrieve best_score
+    ; remove fake placing
+    mov byte [cases + rdx], 0
+    cmp rcx, rax
+    jg .loop_end_save ; if the score is greater, we save it
+    mov rcx, rax
+    mov rbx, rdx
+.loop_end_save:
+    push rcx ; save best_score
+    push rbx ; save best_pos
+.loop_end:
+    
+    mov bl, [current_player]
+    inc rdx
+    cmp rdx, 9
+    jne .loop
+    ; decrease n_turns
+    mov bl, [n_turns]
+    dec bl
+    mov [n_turns], bl
+    pop rbx ; retrieve best_pos
+    pop rax ; retrieve best_score
+    pop rdx ; retrieve n_turns
+    mov [n_turns], dl
+    pop rdx ; retrieve current_player
+    mov [current_player], dl
+    ret
+
+.immediate_return:
+    mov rax, 10
+    sub rax, [n_turns]
+    ret
+.return_zero:
+    xor rax, rax
+    ret
+
+
+
+minimax_min:
+    call check_win
+    cmp rax, 1
+    je .immediate_return
+    cmp byte [n_turns], 9
+    je .return_zero
+
+    ; for each possible case, 
+    xor rdx, rdx
+    xor rbx, rbx
+
+    ; increases turn by 1
+    mov bl, [current_player]
+    push rbx ; save current_player
+    mov bl, [n_turns]
+    push rbx ; save n_turns
+    inc bl
+    mov [n_turns], bl
+    and bl, 0x01
+    inc bl
+    mov [current_player], bl
+    push 11 ; save best_score
+    push 11 ; save best_pos
+.loop:
+    cmp byte [cases + rdx], 0
+    jne .loop_end
+    
+    ; fake placing
+    mov [cases + rdx], bl
+    push rdx ; save loop_counter
+    call minimax_max
+    pop rdx ; retrieve loop_counter
+    
+    pop rbx ; retrieve best_pos
+    pop rcx ; retrieve best_score
+    ; remove fake placing
+    mov byte [cases + rdx], 0
+    cmp rcx, rax
+    jl .loop_end_save ; if the score is smaller, we save it
+    mov rcx, rax
+    mov rbx, rdx
+.loop_end_save:
+    push rcx ; save best_score
+    push rbx ; save best_pos
+.loop_end:
+    
+    mov bl, [current_player]
+    inc rdx
+    cmp rdx, 9
+    jne .loop
+    ; decrease n_turns
+    mov bl, [n_turns]
+    dec bl
+    mov [n_turns], bl
+    pop rbx ; retrieve best_pos
+    pop rax ; retrieve best_score
+    pop rdx ; retrieve n_turns
+    mov [n_turns], dl
+    pop rdx ; retrieve current_player
+    mov [current_player], dl
+    ret
+
+.immediate_return:
+    mov rax, [n_turns]
+    sub rax, 10
+    ret
+.return_zero:
+    xor rax, rax
     ret
 
 section .bss
